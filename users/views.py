@@ -15,6 +15,7 @@ User = get_user_model
 #for setting up csrf token cookie on the frontend
 @method_decorator(ensure_csrf_cookie,name='dispatch')
 class CsrfTokenView(APIView):
+    permission_classes=[AllowAny]
     def get(self,request):
         return JsonResponse({'message':'csrf cookie set'})
 
