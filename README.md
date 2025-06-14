@@ -40,7 +40,16 @@ source venv/bin/activate  # On Windows use: venv\Scripts\activate
 pip install -r requirements.txt
 
 # 4. Create a `.env` file in the root backend directory
+# .env.example
 
+# CORS settings — comma-separated list of allowed origins (frontend URLs)
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+
+# CSRF trusted origins — comma-separated list (same as frontend URLs)
+CSRF_TRUSTED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+
+# Enable sending credentials (cookies, sessions)
+CORS_ALLOW_CREDENTIALS=True
 
 # 5. Make and apply migrations
 python manage.py makemigrations
