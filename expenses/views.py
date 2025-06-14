@@ -9,6 +9,7 @@ from rest_framework.decorators import action
 from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework import status
+from users.permissions import IsAdminOrReadOnly
 
 
 CATEGORY_CHOICES = [
@@ -20,31 +21,42 @@ CATEGORY_CHOICES = [
 
 class ExpenseView(viewsets.ModelViewSet):
     serializer_class = ExpenseSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_class = ExpenseFilter
     
     def get_queryset(self):
         if self.request.user.is_superuser:  # adding condition to generate queryset, for admin have access to all users,expenses
-            return Expense.objects.all()
-        return Expense.objects.filter(user=self.request.user) #only athenticated user can access his expenses
+            return Expense.objects.all().order_by('-id')
+        return Expense.objects.filter(user=self.request.user).order_by('-id') #only athenticated user can access his expenses
     
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
         
     @action(detail=False,methods=['get'],url_path='summery')
     def summery(self,request):
-        queryset=self.get_queryset()
-        totals = queryset.values('category').annotate(total=Sum('amount')) # gettting the total amout for the available categories that user have
-        total_dict = {item['category']:item['total'] for item in totals} #converting python object to dictionary
-        summery =[]
+        from decimal import Decimal
+        from collections import defaultdict
+
+        queryset = self.get_queryset()
+
+        # Manual aggregation to ensure accuracy
+        category_totals = defaultdict(lambda: Decimal('0'))
+
+        for expense in queryset:
+            category_totals[expense.category] += expense.amount
+
+        print("=== Category Totals ===")
+        for category, total in category_totals.items():
+            print(f"{category}: {total}")
+
+        # Build summary
+        summary = []
         for code, label in CATEGORY_CHOICES:
-            summery.append(
-                {
-                    'category':code,
-                    'label':label,
-                    'total':float(total_dict.get(code,0))
-                }
-            )    
-        return Response(summery,status=status.HTTP_200_OK)
-    
+            summary.append({
+                'category': code,
+                'label': label,
+                'total': float(category_totals[code])
+            })
+
+        return Response(summary, status=status.HTTP_200_OK)

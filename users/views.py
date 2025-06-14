@@ -69,7 +69,8 @@ class CheckAuthView(APIView):
                 'is_authenticated':True,
                 'user':{
                     'id':request.user.id,
-                    'username':request.user.username
+                    'username':request.user.username,
+                    'is_admin':request.user.is_superuser
                 }
             })
         else:

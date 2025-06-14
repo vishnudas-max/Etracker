@@ -1,6 +1,10 @@
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 
-class isNotAuthenticated(BasePermission):
+# permission class to revoke delete to normal user--
+class IsAdminOrReadOnly(BasePermission):
+
     def has_permission(self, request, view):
-        print(f'user authentication satus--{request.user.is_authenticated}')
-        return not request.user or request.user.is_authenticated
+        if request.method == 'DELETE':
+            return request.user.is_superuser
+
+        return True
