@@ -17,7 +17,7 @@ User = get_user_model
 class CsrfTokenView(APIView):
     permission_classes=[AllowAny]
     def get(self,request):
-        return JsonResponse({'message':'csrf cookie set'})
+        return JsonResponse({'message':'csrf cookie set'},status=status.HTTP_200_OK)
 
 #view to handle user registration
 class RegistrationView(APIView):
@@ -27,7 +27,7 @@ class RegistrationView(APIView):
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'message':'User Registerd Succesfully.'},status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
@@ -37,8 +37,8 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
     
     def post(self,request):
-        username = request.data['username']
-        password = request.data['password']
+        username = request.data.get('username') 
+        password = request.data.get('password')
         
         if not username or not password:
             return Response({'message':'Username and Password are required !'},status=status.HTTP_400_BAD_REQUEST)
@@ -48,7 +48,7 @@ class LoginView(APIView):
             login(request,user)
             return Response({'message':'login success full'},status=status.HTTP_200_OK)
         else:
-            return Response({'message':'Invalid credentials'},status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message':'Invalid credentials'},status=status.HTTP_401_UNAUTHORIZED)
 
 #to logout the user
 class LogoutView(APIView):
@@ -59,21 +59,23 @@ class LogoutView(APIView):
 
 
 #for checking user is authenticated 
+
+
 class CheckAuthView(APIView):
     
     permission_classes = [AllowAny]
     
-    def get(self,request):
+    def get(self, request):
         if request.user.is_authenticated:
             return Response({
-                'is_authenticated':True,
-                'user':{
-                    'id':request.user.id,
-                    'username':request.user.username,
-                    'is_admin':request.user.is_superuser
+                'is_authenticated': True,
+                'user': {
+                    'id': request.user.id,
+                    'username': request.user.username,
+                    'is_admin': request.user.is_superuser
                 }
-            })
+            }, status=status.HTTP_200_OK)
         else:
             return Response({
-                'is_authenticated':False
-            })
+                'is_authenticated': False
+            }, status=status.HTTP_401_UNAUTHORIZED)
